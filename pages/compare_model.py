@@ -73,20 +73,24 @@ def app():
 
 		cold1, cold2 = st.columns([1,4])
 
+		if len(result_dict_train) == 0:
+			st.markdown("##### Model Belum Tersedia :no_entry:")
+
 		with cold1:
 			for opt, emot in zip(options, emots):
 				st.markdown(f"##### {emot} {opt}")
 		with cold2:
-			with st.expander("Parameter Terbaik :"):
-				for key, l_model in loaded_model.items():
-					if l_model:
-						if key == "knn":
-							st.write("KNN")
-						if key == "svm":
-							st.write("SVM")
-						if key == "rf":
-							st.write("Random Forest")
-						st.write(l_model.best_params_)
+			if len(result_dict_train) >= 1:
+				with st.expander("Parameter Terbaik :"):
+					for key, l_model in loaded_model.items():
+						if l_model:
+							if key == "knn":
+								st.write("KNN")
+							if key == "svm":
+								st.write("SVM")
+							if key == "rf":
+								st.write("Random Forest")
+							st.write(l_model.best_params_)
 		
 		"""Compare Algorithm Performance"""
 		if (len(result_dict_train) >= 2) and (len(result_dict_test) >= 2):
@@ -111,6 +115,3 @@ def app():
 				ax[0].set_xticklabels(df_result_train.index, fontsize=19, rotation = 55)
 				ax[1].set_xticklabels(df_result_test.index, fontsize=19, rotation = 55)
 				st.pyplot(plt)
-
-def load_data_prep(df):
-	pass

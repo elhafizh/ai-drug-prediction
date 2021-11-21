@@ -14,8 +14,7 @@ app = MultiPage()
 st.title("Aplikasi prediksi Jenis Obat")
 
 app.add_page("Upload Data", data_upload.app)
-app.add_page("Univariate Variable Analysis", univariate_data_visualize.app)
-app.add_page("Basic Data Analysis", basic_data_visualize.app)
+app.add_page("Basic Data Analysis", univariate_data_visualize.app)
 app.add_page("Machine Learning", machine_learning.app)
 app.add_page("Model Comparison", compare_model.app)
 
