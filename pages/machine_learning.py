@@ -1,25 +1,17 @@
-# Import necessary libraries
-import json
-import joblib
-
 import numpy as np
 import pandas as pd
 import streamlit as st
+from os import path, makedirs
+import os
+import pickle
 
 # Machine Learning 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import cross_val_score
-
-# Custom classes 
-from .utils import isNumerical
-import os
 
 def app():
 	"""This application helps in running machine learning models without having to write explicit code 
@@ -41,12 +33,23 @@ def app():
 		for l in label_list:
 			label_encoder(df, l)
 		
-		model_comparison = {
+		model_path = {
 			"knn" : False,
 			"svm" : False,
 			"rf" : False
 		}
 
+		model_dir = "data/model/"
+		if path.exists(model_dir):
+			knn_dir_m = model_dir+list(model_path.keys())[0]+".sav"
+			svm_dir_m = model_dir+list(model_path.keys())[1]+".sav"
+			rf_dir_m = model_dir+list(model_path.keys())[2]+".sav"
+			if path.exists(knn_dir_m):
+				model_path["knn"] = knn_dir_m
+			if path.exists(svm_dir_m):
+				model_path["svm"] = svm_dir_m
+			if path.exists(rf_dir_m):
+				model_path["rf"] = rf_dir_m
 
 		# Perform train test splits 
 		st.markdown("#### Train Test Splitting")
@@ -69,72 +72,105 @@ def app():
 		st.write("Jumlah training samples:", x_train.shape[0])
 		st.write("Jumlah testing samples:", x_test.shape[0])
 
-		# To store results of models
-		result_dict_train = {}
-		result_dict_test = {}
+		colb1, colb2 = st.columns(2)
 
-		x_var = st.radio("Pilih algoritma yang akan dipakai :",options=('KNN', 'SVM', 'Random Forest'))       
-
-		"""KNN Classifier & GridSearchCV"""
+		with colb1:
+			x_var = st.radio("Pilih algoritma yang akan dipakai :",options=('KNN', 'SVM', 'Random Forest'))       
 
 		if x_var == "KNN":
-			if st.button(f"Jalankan Algoritma {x_var}"):
-				with st.spinner("Proses Training..."):
-					grid = {'n_neighbors':np.arange(1,120),
-							'p':np.arange(1,3),
-							'weights':['uniform','distance']
-						}
-
-					knn = KNeighborsClassifier(algorithm = "auto")
-					knn_cv = GridSearchCV(knn,grid,cv=5)
-					knn_cv.fit(x_train,y_train)
-				st.write("Hyperparameters:",knn_cv.best_params_)
-				st.write("Train Score:",knn_cv.best_score_)
-				st.write("Test Score:",knn_cv.score(x_test,y_test))
-				result_dict_train["KNN GridSearch Train Score"] = knn_cv.best_score_
-				result_dict_test["KNN GridSearch Test Score"] = knn_cv.score(x_test,y_test)
-				model_comparison['knn'] = True
+			if model_path["knn"]:
+				with colb2:
+					st.markdown(f"#### Training {x_var} Selesai :white_check_mark:")
+					if st.button(f"Retrain {x_var} ?"):
+						training_knn(x_train, y_train, x_test, y_test, model_path)
+			else:
+				if st.button(f"Jalankan Algoritma {x_var}"):
+					training_knn(x_train, y_train, x_test, y_test, model_path)
 		if x_var == "Random Forest":
-			if st.button(f"Jalankan Algoritma {x_var}"):
-				with st.spinner("Proses Training..."):
-					grid = {'n_estimators':np.arange(100,1000,100),
-							'criterion':['gini','entropy']
-						}
-
-					rf = RandomForestClassifier(random_state = 42)
-					rf_cv = GridSearchCV(rf,grid,cv=5)
-					rf_cv.fit(x_train,y_train)
-				st.write("Hyperparameters:",rf_cv.best_params_)
-				st.write("Train Score:",rf_cv.best_score_)
-				st.write("Test Score:",rf_cv.score(x_test,y_test))
-				result_dict_train["Random Forest GridSearch Train Score"] = rf_cv.best_score_
-				result_dict_test["Random Forest GridSearch Test Score"] = rf_cv.score(x_test,y_test)
-				model_comparison['rf'] = True
+			if model_path["rf"]:
+				with colb2:
+					st.markdown(f"#### Training {x_var} Selesai :white_check_mark:")
+					if st.button(f"Retrain {x_var} ?"):
+						training_rf(x_train, y_train, x_test, y_test, model_path)
+			else:
+				if st.button(f"Jalankan Algoritma {x_var}"):
+					training_rf(x_train, y_train, x_test, y_test, model_path)
 		if x_var == "SVM":
-			if st.button(f"Jalankan Algoritma {x_var}"):
-				with st.spinner("Proses Training..."):
-					grid = {
-						'C':[0.01,0.1,1,10],
-						'kernel' : ["linear","poly","rbf","sigmoid"],
-						'degree' : [1,3,5,7],
-						'gamma' : [0.01,1]
-					}
+			if model_path["svm"]:
+				with colb2:
+					st.markdown(f"#### Training {x_var} Selesai :white_check_mark:")
+					if st.button(f"Retrain {x_var} ?"):
+						training_svm(x_train, y_train, x_test, y_test, model_path)
+			else:
+				if st.button(f"Jalankan Algoritma {x_var}"):
+					training_svm(x_train, y_train, x_test, y_test, model_path)
 
-					svm  = SVC ()
-					svm_cv = GridSearchCV(svm, grid, cv = 5)
-					svm_cv.fit(x_train,y_train)
-				st.write("Hyperparameters:",svm_cv.best_params_)
-				st.write("Train Score:",svm_cv.best_score_)
-				st.write("Test Score:",svm_cv.score(x_test,y_test))
-				result_dict_train["Random Forest GridSearch Train Score"] = svm_cv.best_score_
-				result_dict_test["Random Forest GridSearch Test Score"] = svm_cv.score(x_test,y_test)
-				model_comparison['svm'] = True
-		
-		if model_comparison["knn"] and model_comparison["svm"] and \
-			model_comparison["rf"]:
-			pass
-				
 
 def label_encoder(df, y):
     le = LabelEncoder()
     df[y] = le.fit_transform(df[y])
+
+
+def training_knn(x_train, y_train, x_test, y_test, model_path):
+	with st.spinner("Proses Training..."):
+		grid = {'n_neighbors':np.arange(1,120),
+				'p':np.arange(1,3),
+				'weights':['uniform','distance']
+			}
+
+		knn = KNeighborsClassifier(algorithm = "auto")
+		knn_cv = GridSearchCV(knn,grid,cv=5)
+		knn_cv.fit(x_train,y_train)
+	st.write("Hyperparameters:",knn_cv.best_params_)
+	st.write("Train Score:",knn_cv.best_score_)
+	st.write("Test Score:",knn_cv.score(x_test,y_test))
+	# Save model
+	algo = "knn"
+	model_path[algo] = save_model(algo, knn_cv)
+
+
+def training_rf(x_train, y_train, x_test, y_test, model_path):
+	with st.spinner("Proses Training..."):
+		grid = {'n_estimators':np.arange(100,1000,100),
+				'criterion':['gini','entropy']
+			}
+
+		rf = RandomForestClassifier(random_state = 42)
+		rf_cv = GridSearchCV(rf,grid,cv=5)
+		rf_cv.fit(x_train,y_train)
+	st.write("Hyperparameters:",rf_cv.best_params_)
+	st.write("Train Score:",rf_cv.best_score_)
+	st.write("Test Score:",rf_cv.score(x_test,y_test))
+	# Save model
+	algo = "rf"
+	model_path[algo] = save_model(algo, rf_cv)
+
+
+def training_svm(x_train, y_train, x_test, y_test, model_path):
+	with st.spinner("Proses Training..."):
+		grid = {
+			'C':[0.01,0.1,1,10],
+			'kernel' : ["linear","poly","rbf","sigmoid"],
+			'degree' : [1,3,5,7],
+			'gamma' : [0.01,1]
+		}
+
+		svm  = SVC ()
+		svm_cv = GridSearchCV(svm, grid, cv = 5)
+		svm_cv.fit(x_train,y_train)
+	st.write("Hyperparameters:",svm_cv.best_params_)
+	st.write("Train Score:",svm_cv.best_score_)
+	st.write("Test Score:",svm_cv.score(x_test,y_test))
+	# Save model
+	algo = "svm"
+	model_path[algo] = save_model(algo, svm_cv)
+
+
+def save_model(algo, model):
+	filename = algo+".sav"
+	model_dir = "data/model/"
+	if not path.exists(model_dir):
+		makedirs(model_dir)
+	with open(model_dir+filename, 'wb') as pickle_file:
+		pickle.dump(model, pickle_file)
+	return model_dir+filename
