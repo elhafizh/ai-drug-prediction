@@ -11,6 +11,7 @@ def app():
 		st.markdown("Please upload data through `Upload Data` page!")
 	else:
 		st.markdown("#### Algoritma yang telah di-Training:")
+		st.write("\n")
 
 		# To store results of models
 		result_dict_train = {}
@@ -71,7 +72,7 @@ def app():
 		
 		emots = [":guitar:", ":saxophone:", ":violin:"]
 
-		cold1, cold2 = st.columns([1,4])
+		cold1, cold2 = st.columns([1,2])
 
 		if len(result_dict_train) == 0:
 			st.markdown("##### Model Belum Tersedia :no_entry:")

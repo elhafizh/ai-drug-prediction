@@ -1,7 +1,5 @@
-from genericpath import exists
 import numpy as np
 import pandas as pd
-from scipy.stats.stats import mode
 import streamlit as st
 from os import path, makedirs
 import os
@@ -74,7 +72,7 @@ def app():
 		st.write("Jumlah training samples:", x_train.shape[0])
 		st.write("Jumlah testing samples:", x_test.shape[0])
 
-		colb1, colb2 = st.columns(2)
+		colb1, colb2 = st.columns([1,2])
 
 		with colb1:
 			x_var = st.radio("Pilih algoritma yang akan dipakai :",options=('KNN', 'SVM', 'Random Forest'))       
