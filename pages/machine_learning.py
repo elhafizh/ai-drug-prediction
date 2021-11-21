@@ -1,5 +1,7 @@
+from genericpath import exists
 import numpy as np
 import pandas as pd
+from scipy.stats.stats import mode
 import streamlit as st
 from os import path, makedirs
 import os
@@ -32,7 +34,7 @@ def app():
 		label_list = ["Sex","BP","Cholesterol","Na_to_K","Drug"]
 		for l in label_list:
 			label_encoder(df, l)
-		
+
 		model_path = {
 			"knn" : False,
 			"svm" : False,
@@ -41,9 +43,9 @@ def app():
 
 		model_dir = "data/model/"
 		if path.exists(model_dir):
-			knn_dir_m = model_dir+list(model_path.keys())[0]+".sav"
-			svm_dir_m = model_dir+list(model_path.keys())[1]+".sav"
-			rf_dir_m = model_dir+list(model_path.keys())[2]+".sav"
+			knn_dir_m = model_dir+"model/"+list(model_path.keys())[0]+".sav"
+			svm_dir_m = model_dir+"model/"+list(model_path.keys())[1]+".sav"
+			rf_dir_m = model_dir+"model/"+list(model_path.keys())[2]+".sav"
 			if path.exists(knn_dir_m):
 				model_path["knn"] = knn_dir_m
 			if path.exists(svm_dir_m):
@@ -63,12 +65,12 @@ def app():
 		x = df.drop(["Drug"],axis=1)
 		y = df.Drug
 
-		x_train, x_test, y_train, y_test = train_test_split(x,y,test_size = 0.2, random_state = 42, shuffle = True)
+		x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=size, random_state=42, shuffle=True)
 
 		y_train = y_train.values.reshape(-1,1)
 		y_test = y_test.values.reshape(-1,1)
 
-		x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=size, random_state=42)
+
 		st.write("Jumlah training samples:", x_train.shape[0])
 		st.write("Jumlah testing samples:", x_test.shape[0])
 
@@ -86,6 +88,7 @@ def app():
 			else:
 				if st.button(f"Jalankan Algoritma {x_var}"):
 					training_knn(x_train, y_train, x_test, y_test, model_path)
+					st.markdown(f"#### Training {x_var} Selesai :white_check_mark:")
 		if x_var == "Random Forest":
 			if model_path["rf"]:
 				with colb2:
@@ -95,6 +98,7 @@ def app():
 			else:
 				if st.button(f"Jalankan Algoritma {x_var}"):
 					training_rf(x_train, y_train, x_test, y_test, model_path)
+					st.markdown(f"#### Training {x_var} Selesai :white_check_mark:")
 		if x_var == "SVM":
 			if model_path["svm"]:
 				with colb2:
@@ -104,11 +108,23 @@ def app():
 			else:
 				if st.button(f"Jalankan Algoritma {x_var}"):
 					training_svm(x_train, y_train, x_test, y_test, model_path)
+					st.markdown(f"#### Training {x_var} Selesai :white_check_mark:")
 
 
 def label_encoder(df, y):
-    le = LabelEncoder()
-    df[y] = le.fit_transform(df[y])
+	filename = y+".sav"
+	model_dir = "data/model/encoder/"
+	if not path.exists(model_dir):
+		makedirs(model_dir)
+	if not path.exists(model_dir+filename):
+		le = LabelEncoder()
+		model = le.fit(df[y])
+		with open(model_dir+filename, 'wb') as pickle_file:
+			pickle.dump(model, pickle_file)
+	else:
+		with open(model_dir+filename, 'rb') as pickle_file:
+			model = pickle.load(pickle_file)
+	df[y] = model.transform(df[y])
 
 
 def training_knn(x_train, y_train, x_test, y_test, model_path):
@@ -127,6 +143,7 @@ def training_knn(x_train, y_train, x_test, y_test, model_path):
 	# Save model
 	algo = "knn"
 	model_path[algo] = save_model(algo, knn_cv)
+	save_xy_test(x_test, y_test)
 
 
 def training_rf(x_train, y_train, x_test, y_test, model_path):
@@ -144,6 +161,7 @@ def training_rf(x_train, y_train, x_test, y_test, model_path):
 	# Save model
 	algo = "rf"
 	model_path[algo] = save_model(algo, rf_cv)
+	save_xy_test(x_test, y_test)
 
 
 def training_svm(x_train, y_train, x_test, y_test, model_path):
@@ -164,13 +182,24 @@ def training_svm(x_train, y_train, x_test, y_test, model_path):
 	# Save model
 	algo = "svm"
 	model_path[algo] = save_model(algo, svm_cv)
+	save_xy_test(x_test, y_test)
 
 
 def save_model(algo, model):
 	filename = algo+".sav"
-	model_dir = "data/model/"
+	model_dir = "data/model/model/"
 	if not path.exists(model_dir):
 		makedirs(model_dir)
 	with open(model_dir+filename, 'wb') as pickle_file:
 		pickle.dump(model, pickle_file)
 	return model_dir+filename
+
+
+def save_xy_test(x_test, y_test):
+	model_dir_enc = "data/model/xy_test/"
+	if not path.exists(model_dir_enc):
+		makedirs(model_dir_enc)
+	with open(model_dir_enc+"x_test.npy", "wb") as f:
+		np.save(f, x_test)
+	with open(model_dir_enc+"y_test.npy", "wb") as f:
+		np.save(f, y_test)
