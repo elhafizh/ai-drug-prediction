@@ -173,7 +173,9 @@ if st.button('Train'):
 
 		from sklearn.metrics import confusion_matrix, accuracy_score
 		cm = confusion_matrix(y_test, y_pred)
-		st.write("%s" % cm)
+		# st.write("%s" % cm)
+		with st_stdout("text"):
+			print(cm)
 		st.write("Tingkat akurasi %s" % accuracy_score(y_test, y_pred))
 
 	elif(var_classification_opt=='Decision Tree'):
@@ -187,7 +189,8 @@ if st.button('Train'):
 
 		from sklearn.metrics import confusion_matrix, accuracy_score
 		cm = confusion_matrix(y_test, y_pred)
-		st.write("%s" % cm)
+		with st_stdout("text"):
+			print(cm)
 		st.write("Tingkat akurasi %s" % accuracy_score(y_test, y_pred))
 		
 
