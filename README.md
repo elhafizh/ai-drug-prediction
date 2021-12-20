@@ -42,3 +42,10 @@ $ pip install -r requirements.txt
 	- buat folder baru dengan nama `dataset`
 	- ekstrak file zip yang baru didownload, kemudian copy file drug200.csv kedalam folder `dataset`
 	![](media/001.png)
+
+<br>
+
+- Menjalankan aplikasi streamlit
+```bash
+$ streamlit run app.py
+```
